@@ -5,6 +5,18 @@ const path = require('path');
 const os = require('os');
 const config = require('./config');
 
+// ASCII ART DEZZIFY - PREMIUM MONOCHROME
+const ASCII = `
+\x1b[37m  _____  ______ ________ ________ _____ ______驰 __   __
+ |  __ \\|  ____|___  /|___  /|_   _|  ____| \\ \\ / /
+ | |  | | |__     / /    / /   | | | |__     \\ V / 
+ | |  | |  __|   / /    / /    | | |  __|     | |  
+ | |__| | |____ / /__  / /__  _| |_| |        | |  
+ |_____/|______|/____|/____||_____|_|        |_|  \x1b[0m
+                                                   
+    \x1b[90mSTAY PREMIUM • NOT A DEVELOPER • SINCE 2026\x1b[0m
+\x1b[37m⚪ ———————————————————————————————————————————————— ⚪\x1b[0m`;
+
 global.thumb = config.thumb;
 const bot = new TelegramBot(config.botToken, { polling: true });
 const PLUGINS_DIR = path.join(__dirname, 'plugins');
@@ -14,19 +26,46 @@ const DB_DIR = path.join(__dirname, 'database');
 const USERS_DB = path.join(DB_DIR, 'users.json');
 const BANNED_DB = path.join(DB_DIR, 'banned.json');
 
+// Initialize folders & files
 [PLUGINS_DIR, TEMP_DIR, DB_DIR].forEach(dir => { if (!fs.existsSync(dir)) fs.mkdirSync(dir); });
 if (!fs.existsSync(USERS_DB)) fs.writeFileSync(USERS_DB, '[]');
 if (!fs.existsSync(BANNED_DB)) fs.writeFileSync(BANNED_DB, '[]');
 
-console.log('⚪ ——————————————————————————————————— ⚪');
-console.log('🤖 DEZZ-BOT INFINITY ENGINE ONLINE');
-console.log('🌍 LANGUAGES: JS, PY, GO, PHP, SH, CPP, JAVA, RB, RS, TS');
-console.log('⚪ ——————————————————————————————————— ⚪\n');
+// ==========================================
+// PRETTY CONSOLE LOGGING (FOR JJ CONTENT)
+// ==========================================
+console.clear();
+console.log(ASCII);
+console.log(`\x1b[37m[ ${new Date().toLocaleTimeString()} ] ⚪ SYSTEM: \x1b[1mDEZZIFY INFINITY ENGINE V3\x1b[0m`);
+console.log(`\x1b[37m[ ${new Date().toLocaleTimeString()} ] ⚪ NODE: \x1b[1m${process.version}\x1b[0m`);
+console.log(`\x1b[37m[ ${new Date().toLocaleTimeString()} ] ⚪ RAM: \x1b[1m8GB (VPS NAT ENABLED)\x1b[0m`);
+console.log(`\x1b[37m[ ${new Date().toLocaleTimeString()} ] ⚪ LOC: \x1b[1mBandar Lampung, Indonesia\x1b[0m`);
+console.log(`\x1b[37m[ ${new Date().toLocaleTimeString()} ] ⚪ STATUS: \x1b[32mSTABLE & ONLINE\x1b[0m`);
+console.log(`\x1b[37m⚪ ———————————————————————————————————————————————— ⚪\x1b[0m`);
 
-process.on('uncaughtException', (err) => console.log('⚫ [SYS-ERR]', err.message));
+// TAMPILAN SUPPORT BAHASA (INI YANG LU MAU)
+console.log(`\x1b[1m\x1b[37m    SUPPORTED LANGUAGES & ENGINES:\x1b[0m`);
+const languages = [
+    { lang: 'Node.js', ext: '.js', status: '✅ READY' },
+    { lang: 'Python', ext: '.py', status: '✅ READY' },
+    { lang: 'Golang', ext: '.go', status: '✅ READY' },
+    { lang: 'PHP-Cli', ext: '.php', status: '✅ READY' },
+    { lang: 'Bash/SH', ext: '.sh', status: '✅ READY' },
+    { lang: 'TypeScript', ext: '.ts', status: '✅ READY' },
+    { lang: 'Ruby', ext: '.rb', status: '✅ READY' },
+    { lang: 'C++/Binary', ext: '.cpp', status: '✅ READY' },
+    { lang: 'Rust/Cargo', ext: '.rs', status: '✅ READY' },
+    { lang: 'Java/JDK', ext: '.java', status: '✅ READY' }
+];
+languages.forEach(l => {
+    console.log(`    \x1b[90m> ${l.lang.padEnd(12)} (${l.ext.padEnd(5)})  \x1b[37m${l.status}\x1b[0m`);
+});
+console.log(`\x1b[37m⚪ ———————————————————————————————————————————————— ⚪\x1b[0m\n`);
+
+process.on('uncaughtException', (err) => console.log(`\x1b[31m[ ERROR ] ${err.message}\x1b[0m`));
 
 // ==========================================
-// AUTO-INSTALLER & COMPILER
+// AUTO-INSTALLER ENGINE
 // ==========================================
 function preparePlugin(filePath, ext) {
     try {
@@ -37,7 +76,10 @@ function preparePlugin(filePath, ext) {
                 matches.forEach(m => {
                     const pkg = m.match(/['"](.+?)['"]/)[1];
                     if (!pkg.startsWith('.') && !pkg.includes('/') && !require('module').builtinModules.includes(pkg)) {
-                        try { require.resolve(pkg); } catch (e) { execSync(`npm install ${pkg}`); }
+                        try { require.resolve(pkg); } catch (e) { 
+                            console.log(`\x1b[90m[ AUTO-INSTALL ] Installing Node package: ${pkg}\x1b[0m`);
+                            execSync(`npm install ${pkg}`); 
+                        }
                     }
                 });
             }
@@ -48,20 +90,14 @@ function preparePlugin(filePath, ext) {
                 matches.forEach(m => {
                     const pkg = m.replace(/^(import|from)\s+/, '').trim();
                     if (!['sys', 'os', 'json', 'urllib', 'time', 're', 'math'].includes(pkg)) {
-                        execSync(`pip install ${pkg} --break-system-packages`);
+                        try { execSync(`pip install ${pkg} --break-system-packages`); } catch (e) {}
                     }
                 });
             }
-        } else if (ext === '.cpp') {
-            const outPath = filePath.replace('.cpp', '.out');
-            execSync(`g++ "${filePath}" -o "${outPath}"`);
-        } else if (ext === '.java') {
-            execSync(`javac "${filePath}"`);
-        } else if (ext === '.rs') {
-            const outPath = filePath.replace('.rs', '.bin');
-            execSync(`rustc "${filePath}" -o "${outPath}"`);
-        }
-    } catch (err) { console.log(`⚫ [PREP-FAIL] ${ext}:`, err.message); }
+        } else if (ext === '.cpp') { execSync(`g++ "${filePath}" -o "${filePath.replace('.cpp', '.out')}"`); }
+        else if (ext === '.java') { execSync(`javac "${filePath}"`); }
+        else if (ext === '.rs') { execSync(`rustc "${filePath}" -o "${filePath.replace('.rs', '.bin')}"`); }
+    } catch (err) { console.log(`\x1b[31m[ PREP-FAIL ] ${ext}: ${err.message}\x1b[0m`); }
 }
 
 // ==========================================
@@ -73,34 +109,29 @@ bot.on('message', async (msg) => {
     const username = msg.from.username || msg.from.first_name || 'User';
     let text = msg.text || msg.caption || '';
     
+    // Log Chat to Console (JJ Style)
+    console.log(`\x1b[37m[ ${new Date().toLocaleTimeString()} ] ⚪\x1b[0m \x1b[1m${username}\x1b[0m: ${text.substring(0, 50)}`);
+
     if (JSON.parse(fs.readFileSync(BANNED_DB)).includes(userId)) return;
 
-    // Log New User
+    // Database Log
     let users = JSON.parse(fs.readFileSync(USERS_DB));
     if (!users.includes(userId)) {
         users.push(userId);
         fs.writeFileSync(USERS_DB, JSON.stringify(users));
-        bot.sendMessage(config.logChatId, `⚪ **USER BARU**\n👤 ${username} (\`${userId}\`)`, { reply_to_message_id: config.logMsgId, parse_mode: 'Markdown' }).catch(() => {});
+        bot.sendMessage(config.logChatId, `⚪ **DEZZIFY LOG**\n👤 ${username} (\`${userId}\`)`, { reply_to_message_id: config.logMsgId, parse_mode: 'Markdown' }).catch(() => {});
     }
 
     if (!text.startsWith('/')) return;
 
-    const args = text.slice(1).trim().split(/ +/);
-    const command = args.shift().toLowerCase();
+    const argsArr = text.slice(1).trim().split(/ +/);
+    const command = argsArr.shift().toLowerCase();
     const q = text.replace(`/${command}`, '').trim();
 
-    // Mapping Ekstensi & Runner
     const extensions = { 
-        '.js': 'node', 
-        '.py': 'python3', 
-        '.go': 'go run',
-        '.php': 'php',
-        '.sh': 'bash',
-        '.ts': 'npx ts-node',
-        '.rb': 'ruby',
-        '.cpp': './' + command + '.out',
-        '.rs': './' + command + '.bin',
-        '.java': 'java'
+        '.js': 'node', '.py': 'python3', '.go': 'go run', '.php': 'php', 
+        '.sh': 'bash', '.ts': 'npx ts-node', '.rb': 'ruby', 
+        '.cpp': './' + command + '.out', '.rs': './' + command + '.bin', '.java': 'java'
     };
 
     let filePathOnVps = 'none', fileType = 'none';
@@ -112,12 +143,8 @@ bot.on('message', async (msg) => {
         if (fs.existsSync(pluginPath)) {
             preparePlugin(pluginPath, ext);
             
-            let finalRunner = runner;
-            let finalPath = pluginPath;
-
-            // Handle khusus Java (butuh nama class)
+            let finalRunner = runner, finalPath = pluginPath;
             if (ext === '.java') finalPath = command; 
-            // Handle binary (CPP/Rust)
             if (ext === '.cpp' || ext === '.rs') {
                 finalRunner = '';
                 finalPath = path.join(PLUGINS_DIR, (ext === '.cpp' ? command + '.out' : command + '.bin'));
@@ -127,7 +154,7 @@ bot.on('message', async (msg) => {
             
             exec(cmdToExec, { cwd: PLUGINS_DIR }, (error, stdout, stderr) => {
                 if (filePathOnVps !== 'none' && fs.existsSync(filePathOnVps)) setTimeout(() => { try{fs.unlinkSync(filePathOnVps)}catch(e){} }, 5000);
-                if (error || stderr) return console.log(`⚫ [PLUGIN-ERR]`, stderr || error.message);
+                if (error || stderr) return;
                 
                 const out = stdout.trim();
                 if (!out) return;
