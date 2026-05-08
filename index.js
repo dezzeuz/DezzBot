@@ -5,6 +5,36 @@ const path = require('path');
 const os = require('os');
 const config = require('./config');
 
+// ASCII ART BLOCK SOLID - ANTI PECHAH DI JUICESSH
+const ASCII = `
+\x1b[1m\x1b[37m
+ █▀▀▄ █▀▀ ▀▀█ ▀▀█ ▀▀█ █▀▀ █░░█
+ █░▒█ █▀▀ ▄▀░ ▄▀░ ▄▀░ █▀▀ ▀▄▄█
+ ▀▀▀░ ▀▀▀ ▀▀▀ ▀▀▀ ▀▀▀ ▀░░ ▄▄▄▀
+\x1b[0m
+  \x1b[90mPREMIUM OMNI-ENGINE • SINCE 2026 • LOBSTER V4.0\x1b[0m
+\x1b[37m+--------------------------------------------------+
+\x1b[1m\x1b[37m [ SERVER ARCHITECTURE ]\x1b[0m
+\x1b[37m |
+ |  - ENGINE   : \x1b[1mOPENCLAW V4.0 (CLAUDE-AI)\x1b[0m
+ |  - CPU      : \x1b[1mAMD RYZEN 9 7950X (16-CORES)\x1b[0m
+ |  - RAM      : \x1b[1m64GB DDR5 HYPER-X (ECC)\x1b[0m
+ |  - NETWORK  : \x1b[1m10GBPS ULTRA-LOW LATENCY\x1b[0m
+ |  - STORAGE  : \x1b[1m2TB NVME GEN5 SSD\x1b[0m
+ |  - LOCATION : \x1b[1mBANDAR LAMPUNG, ID\x1b[0m
+ |
+\x1b[37m+--------------------------------------------------+
+\x1b[1m\x1b[37m [ OMNI-LANGUAGE SUPPORT ]\x1b[0m
+\x1b[37m |
+ |  - NODE.JS    : \x1b[32mSTABLE [ACTIVE]\x1b[37m
+ |  - PYTHON3    : \x1b[32mSTABLE [ACTIVE]\x1b[37m
+ |  - GOLANG     : \x1b[32mSTABLE [ACTIVE]\x1b[37m
+ |  - PHP-CLI    : \x1b[32mSTABLE [ACTIVE]\x1b[37m
+ |  - BASH/SH    : \x1b[32mSTABLE [ACTIVE]\x1b[37m
+ |
+\x1b[37m+--------------------------------------------------+
+\x1b[1m\x1b[32m >>> DEZZIFY SUPREME SYSTEM ONLINE\x1b[0m\n`;
+
 global.thumb = config.thumb;
 const bot = new TelegramBot(config.botToken, { polling: true });
 const PLUGINS_DIR = path.join(__dirname, 'plugins');
@@ -14,42 +44,10 @@ const DB_DIR = path.join(__dirname, 'database');
 const USERS_DB = path.join(DB_DIR, 'users.json');
 const BANNED_DB = path.join(DB_DIR, 'banned.json');
 
+// Init Folders
 [PLUGINS_DIR, TEMP_DIR, DB_DIR].forEach(dir => { if (!fs.existsSync(dir)) fs.mkdirSync(dir); });
 if (!fs.existsSync(USERS_DB)) fs.writeFileSync(USERS_DB, '[]');
 if (!fs.existsSync(BANNED_DB)) fs.writeFileSync(BANNED_DB, '[]');
-
-// ==========================================
-// SUPREME CONSOLE DESIGN (FOR JUICESSH)
-// ==========================================
-const ASCII = `
-\x1b[1m\x1b[37m    ____  __________  __________  _________ __
-   / __ \\/ ____/__  |/_  /__  /  /  _/ ____/\\ \\/ /
-  / / / / __/    / /  / /  / /   / // /_     \\  / 
- / /_/ / /___   / /__ / /  / /_ _/ // __/     / /  
-/_____/_____/  /____//_/  /____/___/_/       /_/   \x1b[0m
-
-\x1b[90m       PREMIUM OMNI-ENGINE • NOT A DEVELOPER
-\x1b[37m+--------------------------------------------------+
-\x1b[1m\x1b[37m [ SYSTEM INFORMATION ]\x1b[0m
-\x1b[37m |
- |  - ENGINE   : \x1b[1mDEZZIFY LOBSTER V4.0\x1b[0m
- |  - ARCH     : \x1b[1mOPENCLAW-X64\x1b[0m
- |  - V-CORE   : \x1b[1m16 CORE (RYZEN 9 7950X)\x1b[0m
- |  - V-RAM    : \x1b[1m64GB DDR5 (HYPER-X)\x1b[0m
- |  - NETWORK  : \x1b[1m10GBPS (LOW LATENCY)\x1b[0m
- |  - LOCATION : \x1b[1mBANDAR LAMPUNG, ID\x1b[0m
- |
-\x1b[37m+--------------------------------------------------+
-\x1b[1m\x1b[37m [ MULTI-LANGUAGE RUNTIME ]\x1b[0m
-\x1b[37m |
- |  - Node.js    : \x1b[32mSUPPORTED\x1b[37m
- |  - Python3    : \x1b[32mSUPPORTED\x1b[37m
- |  - Golang     : \x1b[32mSUPPORTED\x1b[37m
- |  - PHP-Cli    : \x1b[32mSUPPORTED\x1b[37m
- |  - Bash/SH    : \x1b[32mSUPPORTED\x1b[37m
- |
-\x1b[37m+--------------------------------------------------+
-\x1b[1m\x1b[32m >>> DEZZIFY SYSTEM IS ONLINE\x1b[0m\n`;
 
 console.clear();
 console.log(ASCII);
@@ -57,6 +55,7 @@ console.log(ASCII);
 // Anti-Crash
 process.on('uncaughtException', (err) => console.log('\x1b[31m[ ⚫ SYS-ERR ]\x1b[0m', err.message));
 
+// Helpers
 const getDB = (file) => JSON.parse(fs.readFileSync(file));
 const saveDB = (file, data) => fs.writeFileSync(file, JSON.stringify(data, null, 2));
 
@@ -123,7 +122,7 @@ bot.on('message', async (msg) => {
     let text = msg.text || msg.caption || '';
     const isOwner = userId === config.ownerId;
 
-    // Log Activity (JuiceSSH Aesthetic)
+    // Log Activity (JuiceSSH JJ Aesthetic)
     console.log(`\x1b[37m[ ${new Date().toLocaleTimeString()} ] \x1b[1m${username.padEnd(12)}\x1b[0m : ${text.substring(0, 30)}`);
 
     const banned = getDB(BANNED_DB);
@@ -138,20 +137,22 @@ bot.on('message', async (msg) => {
 
     if (!text.startsWith('/')) return;
 
-    const args = text.slice(1).trim().split(/ +/);
-    const command = args.shift().toLowerCase();
+    const argsArr = text.slice(1).trim().split(/ +/);
+    const command = argsArr.shift().toLowerCase();
     const q = text.replace(`/${command}`, '').trim();
 
     if (isOwner) {
         if (command === 'runtime') {
             const ut_bot = getRuntime(process.uptime());
             const ut_sys = getRuntime(os.uptime());
+            // Fake Specs for Runtime Command
             const res = `⚪ **SYSTEM RUNTIME** ⚪\n\n` +
                         `🤖 **Bot Active:** \`${ut_bot}\`\n` +
                         `🖥️ **VPS Uptime:** \`${ut_sys}\`\n` +
-                        `💾 **RAM:** \`12.45 GB / 64.00 GB\`\n` +
+                        `💾 **RAM:** \`14.28 GB / 64.00 GB\`\n` +
                         `🧠 **CPU:** \`AMD Ryzen 9 7950X\`\n` +
-                        `🦀 **Engine:** \`OpenClaw Lobster V4.0\``;
+                        `🦀 **Engine:** \`OpenClaw Lobster V4.0\`\n` +
+                        `🧩 **Model:** \`Claude-3.5-Sonnet\``;
             return bot.sendMessage(chatId, res, { parse_mode: 'Markdown' });
         }
         
