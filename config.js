@@ -4,5 +4,6 @@ module.exports = {
     channelId: '-1003564796583',         // ID Channel buat Force Sub
     logChatId: '-1003868113122',         // ID Grup DezzifyPublicChat
     logMsgId: 15,                        // ID Pesan buat dikomenin (Log)
-    channelUrl: 'https://t.me/ChannelDezz'
+    channelUrl: 'https://t.me/ChannelDezz',
+    thumb: 'https://example.com'
 };
