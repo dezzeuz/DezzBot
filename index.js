@@ -3,88 +3,74 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-// ==========================================
-// ANTI CRASH SYSTEM (Boss Mode: ON)
-// ==========================================
-// Kalo ada error parah dari Node.js, kita kacangin aja biar bot ga mati.
+// Anti Crash
 process.on('uncaughtException', (err) => {
-    console.log('[BOSS] Ada error sistem, tapi gua kacangin:', err.message);
+    console.log('[BOSS ERROR] Kacangin error:', err.message);
 });
 process.on('unhandledRejection', (err) => {
-    console.log('[BOSS] Ada promise rejection, gua kacangin:', err.message);
+    console.log('[BOSS ERROR] Kacangin promise:', err.message);
 });
 
-// Konfigurasi
-const token = 'ISI_TOKEN_BOT_TELEGRAM_LU_DISINI'; 
+// MASUKIN TOKEN LU DI SINI
+const token = '8741013211:AAGBW4n3ebT2TMx_ljzUF2-MWOxbHFNDu0M'; 
 const bot = new TelegramBot(token, { polling: true });
 
 const OWNER_ID = '8302651892'; // ID lu
 const PLUGINS_DIR = path.join(__dirname, 'plugins');
 
-// Bikin folder plugins otomatis kalo lu lupa bikin
 if (!fs.existsSync(PLUGINS_DIR)) {
     fs.mkdirSync(PLUGINS_DIR);
 }
 
-console.log('🤖 BOSS (index.js) udah nyala! Siap mantau command...');
+console.log('🤖 BOSS udah nyala! Pantau chat masuk di bawah ini...\n');
 
 bot.on('message', (msg) => {
     const chatId = msg.chat.id.toString();
     const userId = msg.from.id.toString();
     const text = msg.text || '';
+    const username = msg.from.username || msg.from.first_name || 'Unknown';
 
-    // Deteksi command (misal: /ping, /halo)
-    // Kalo user ngetik biasa (bukan command), bos diem aja
+    // FITUR BARU: Menampilkan chat yang masuk ke Console
+    console.log(`[📥 CHAT MASUK] Dari: ${username} (ID: ${userId}) | Pesan: "${text}"`);
+
+    // Kalo bukan command, kacangin
     if (!text.startsWith('/')) return; 
 
-    // Misahin command dan teks tambahannya
     const args = text.slice(1).trim().split(/ +/);
-    const command = args.shift().toLowerCase(); // Ambil kata pertama (cth: "ping")
-    const argString = text.replace(`/${command}`, '').trim(); // Sisa teks
+    const command = args.shift().toLowerCase(); 
+    const argString = text.replace(`/${command}`, '').trim(); 
 
-    // ==========================================
-    // AUTO LOAD SYSTEM (Mencari Pekerja)
-    // ==========================================
     const jsPlugin = path.join(PLUGINS_DIR, `${command}.js`);
     const pyPlugin = path.join(PLUGINS_DIR, `${command}.py`);
     const goPlugin = path.join(PLUGINS_DIR, `${command}.go`);
 
     let execCommand = '';
 
-    // Deteksi plugin mana yang ada, lalu siapin perintah eksekusi terminalnya
-    // Format kirim data ke pekerja: script <chatId> <userId> <sisa teks>
     if (fs.existsSync(jsPlugin)) {
         execCommand = `node "${jsPlugin}" "${chatId}" "${userId}" "${argString}"`;
+        console.log(`[⚙️ EKSEKUSI] Nyuruh pekerja Node.js: ${command}.js`);
     } else if (fs.existsSync(pyPlugin)) {
         execCommand = `python3 "${pyPlugin}" "${chatId}" "${userId}" "${argString}"`;
+        console.log(`[⚙️ EKSEKUSI] Nyuruh pekerja Python: ${command}.py`);
     } else if (fs.existsSync(goPlugin)) {
         execCommand = `go run "${goPlugin}" "${chatId}" "${userId}" "${argString}"`;
+        console.log(`[⚙️ EKSEKUSI] Nyuruh pekerja Golang: ${command}.go`);
     } else {
-        // Plugin ga ada = Kacangin.
+        // Log kalo plugin ga ada
+        console.log(`[⚠️ INFO] Command /${command} dipanggil, tapi file plugin ga ada. Bos diem aja.`);
         return; 
     }
 
-    // ==========================================
-    // ISOLASI PEKERJA (Eksekusi Terpisah)
-    // ==========================================
-    // Bos ngelempar tugas ke terminal baru. 
     exec(execCommand, (error, stdout, stderr) => {
-        // Kalau pekerja numbur tembok (error/rusak) = Kacangin!
         if (error || stderr) {
-            console.log(`[PEKERJA ERROR] Plugin '/${command}' rusak. Bos bodo amat.`);
-            
-            // Opsional: Cuma ngirim info error kalo yang ngetik command itu elu (Owner)
-            if (userId === OWNER_ID) {
-                // bot.sendMessage(chatId, `⚠️ Plugin Error:\n${stderr || error.message}`);
-            }
+            console.log(`[❌ PEKERJA RUSAK] Plugin /${command} error:\n${stderr || error.message}`);
             return; 
         }
 
-        // Kalau pekerja selesai ngolah dan ada hasilnya (print/console.log)
-        // Kirim hasil cetakannya ke Telegram
         const replyText = stdout.trim();
         if (replyText) {
             bot.sendMessage(chatId, replyText);
+            console.log(`[📤 BOSS BALAS] Ke: ${username} | Teks: "${replyText}"`);
         }
     });
 });
