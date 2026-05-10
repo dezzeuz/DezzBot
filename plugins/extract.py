@@ -45,7 +45,7 @@ def main():
         res = requests.get(url, headers=headers_req, timeout=15)
         soup = BeautifulSoup(res.text, 'html.parser')
 
-        # 2. Extract Server Headers (Buat nyari tau jeroan server)
+        # 2. Extract Server Headers
         server_headers = res.headers
 
         # 3. Extract Title & JS Files
@@ -71,11 +71,9 @@ def main():
                 api_responses += f"[*] ENDPOINT : {api}\n"
                 api_responses += f"[-] STATUS   : {api_res.status_code}\n"
                 
-                # Kalau json, rapihin outputnya
                 if 'application/json' in content_type.lower():
                     parsed_json = api_res.json()
                     pretty_json = json.dumps(parsed_json, indent=2)
-                    # Potong kalau terlalu panjang
                     api_responses += f"[-] RESPONS  :\n{pretty_json[:800]} {'... [TRUNCATED]' if len(pretty_json) > 800 else ''}\n\n"
                 else:
                     api_responses += f"[-] RESPONS  : \n{api_res.text[:500]} {'... [TRUNCATED]' if len(api_res.text) > 500 else ''}\n\n"
@@ -85,11 +83,16 @@ def main():
         process_time = round(time.time() - start_time, 2)
 
         # ==========================================
-        # 3. FORMATTING FILE OUTPUT (Gaya Pro Report)
+        # 3. FORMATTING FILE OUTPUT
         # ==========================================
         output_filename = f"Dump_{user_id}_{int(time.time())}.txt"
-        with open(output_filename, "w", encoding="utf-8") as f:
-            # Header Report
+        
+        # Pastikan masuk ke folder temp/ agar otomatis terhapus
+        temp_dir = os.path.join(os.getcwd(), "temp")
+        os.makedirs(temp_dir, exist_ok=True)
+        temp_path = os.path.join(temp_dir, output_filename)
+        
+        with open(temp_path, "w", encoding="utf-8") as f:
             f.write("="*60 + "\n")
             f.write(" ⬛ DEEP WEB EXTRACTOR - INTELLIGENCE REPORT ⬛\n")
             f.write("="*60 + "\n\n")
@@ -129,9 +132,8 @@ def main():
             f.write(res.text[:15000] + "\n\n... [TRUNCATED] ...")
 
         # ==========================================
-        # 4. OUTPUT KE TELEGRAM (Monochrome Elegant)
+        # 4. OUTPUT KE TELEGRAM
         # ==========================================
-        # Ambil info server dari headers kalau ada (misal Nginx/Cloudflare)
         server_info = server_headers.get('Server', 'Unknown')
         
         caption = f"⚫ **EXTRACTION COMPLETE** ⚪\n\n"
@@ -144,8 +146,7 @@ def main():
         caption += f"┗ 🔌 API Found: `{len(api_endpoints)}`\n\n"
         caption += f"> `Report generated successfully. Open the attached file to see Headers, API responses, and source code.`"
         
-        # Kirim trigger ke Node.js bot lu
-        print(f"SEND_FILE:{output_filename}|{caption}")
+        print(f"SEND_FILE:{temp_path}|{caption}")
 
     except Exception as e:
         print(f"⚫ **SYSTEM FAILURE** ⚪\n\nGagal melakukan ekstraksi data pada target.\n**Log:** `{str(e)}`")
