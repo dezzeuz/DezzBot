@@ -149,6 +149,21 @@ async function installMissingPackages(filePath, ext, botInstance, ownerId) {
 }
 
 // ==========================================
+// CALLBACK QUERY HANDLER (PENANGKAP TOMBOL)
+// ==========================================
+bot.on('callback_query', async (query) => {
+    const msg = query.message;
+    msg.from = query.from;
+    msg.text = query.data; // Sulap isi tombol jadi command chat biasa
+
+    // Matiin icon jam pasir di tombol Telegram user
+    bot.answerCallbackQuery(query.id).catch(()=>{});
+
+    // Lempar data ke Message Handler seolah-olah user ngetik manual
+    bot.emit('message', msg);
+});
+
+// ==========================================
 // MESSAGE HANDLER
 // ==========================================
 bot.on('message', async (msg) => {
