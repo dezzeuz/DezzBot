@@ -1,5 +1,7 @@
 const TelegramBot = require('node-telegram-bot-api');
 const { exec, execSync } = require('child_process');
+const util = require('util');
+const execAsync = util.promisify(exec);
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -29,8 +31,6 @@ const ASCII = `
  |  - NODE.JS    : \x1b[32mSTABLE [ACTIVE]\x1b[37m
  |  - PYTHON3    : \x1b[32mSTABLE [ACTIVE]\x1b[37m
  |  - GOLANG     : \x1b[32mSTABLE [ACTIVE]\x1b[37m
- |  - PHP-CLI    : \x1b[32mSTABLE [ACTIVE]\x1b[37m
- |  - BASH/SH    : \x1b[32mSTABLE [ACTIVE]\x1b[37m
  |
 \x1b[37m+--------------------------------------------------+
 \x1b[1m\x1b[32m >>> DEZZIFY SUPREME SYSTEM ONLINE\x1b[0m\n`;
@@ -55,7 +55,6 @@ console.log(ASCII);
 // Anti-Crash
 process.on('uncaughtException', (err) => console.log('\x1b[31m[ ⚫ SYS-ERR ]\x1b[0m', err.message));
 
-// Helpers
 const getDB = (file) => JSON.parse(fs.readFileSync(file));
 const saveDB = (file, data) => fs.writeFileSync(file, JSON.stringify(data, null, 2));
 
@@ -75,41 +74,78 @@ function getRuntime(seconds) {
 }
 
 // ==========================================
-// AUTO-INSTALLER
+// ADVANCED ASYNC AUTO-INSTALLER
 // ==========================================
-function installMissingPackages(filePath, ext) {
+async function installMissingPackages(filePath, ext, botInstance, ownerId) {
     const content = fs.readFileSync(filePath, 'utf8');
+    let packagesToInstall = [];
+
     try {
         if (ext === '.js') {
             const matches = content.match(/require\(['"](.+?)['"]\)/g);
             if (matches) {
-                matches.map(m => m.match(/['"](.+?)['"]/)[1])
-                    .filter(p => !p.startsWith('.') && !p.includes('/') && !require('module').builtinModules.includes(p))
-                    .forEach(pkg => { 
-                        try { require.resolve(pkg); } 
-                        catch (e) { 
-                            console.log(`\x1b[90m[ INSTALL ] ${pkg}\x1b[0m`);
-                            execSync(`npm install ${pkg}`); 
-                        }
-                    });
+                packagesToInstall = matches.map(m => m.match(/['"](.+?)['"]/)[1])
+                    .filter(p => !p.startsWith('.') && !p.includes('/') && !require('module').builtinModules.includes(p));
             }
+
+            for (let pkg of packagesToInstall) {
+                try { 
+                    require.resolve(pkg); // Cek kalau udah keinstall
+                } catch (e) {
+                    // Kalau belum, lapor ke owner dan install
+                    await botInstance.sendMessage(ownerId, `⚫ **AUTO-INSTALLER TRIGGERED** ⚪\n\n📦 **Module:** \`${pkg}\` (Node.js)\n⏳ Sedang mengunduh dari server npm...`, {parse_mode: 'Markdown'});
+                    console.log(`\x1b[90m[ DOWNLOADING ] npm install ${pkg}\x1b[0m`);
+                    
+                    try {
+                        const { stdout } = await execAsync(`npm install ${pkg}`);
+                        await botInstance.sendMessage(ownerId, `⚪ **INSTALL SUCCESS** ⚪\n\n📦 **Module:** \`${pkg}\`\n✅ Berhasil dipasang di VPS!\n\n**Log:**\n\`\`\`\n${stdout.substring(0, 300).trim()}...\n\`\`\``, {parse_mode: 'Markdown'});
+                    } catch (err) {
+                        await botInstance.sendMessage(ownerId, `⚫ **INSTALL FAILED** ⚪\n\n📦 **Module:** \`${pkg}\`\n❌ Gagal dipasang!\n\n**Error Log:**\n\`\`\`\n${err.message.substring(0, 300).trim()}\n\`\`\``, {parse_mode: 'Markdown'});
+                    }
+                }
+            }
+
         } else if (ext === '.py') {
             const matches = content.match(/^(?:import|from)\s+([^\s\.]+)/gm);
             if (matches) {
-                matches.map(m => m.replace(/^(import|from)\s+/, '').trim())
-                    .filter(p => !['sys', 'os', 'json', 'urllib', 'time', 're', 'math'].includes(p))
-                    .forEach(pkg => {
-                        console.log(`\x1b[90m[ INSTALL ] ${pkg}\x1b[0m`);
-                        execSync(`pip install ${pkg} --break-system-packages`);
-                    });
+                packagesToInstall = matches.map(m => m.replace(/^(import|from)\s+/, '').trim())
+                    .filter(p => !['sys', 'os', 'json', 'urllib', 'time', 're', 'math'].includes(p));
             }
+
+            // Untuk Python, kita tembak aja pip install-nya, errornya kita tangkep
+            if (packagesToInstall.length > 0) {
+                const pkgString = packagesToInstall.join(' ');
+                await botInstance.sendMessage(ownerId, `⚫ **AUTO-INSTALLER TRIGGERED** ⚪\n\n🐍 **Module:** \`${pkgString}\` (Python)\n⏳ Sedang memeriksa & mengunduh via pip...`, {parse_mode: 'Markdown'});
+                console.log(`\x1b[90m[ DOWNLOADING ] pip install ${pkgString}\x1b[0m`);
+
+                try {
+                    const { stdout } = await execAsync(`pip install ${pkgString} --break-system-packages`);
+                    // Hanya kirim log kalau beneran ada yang di-download (bukan "Requirement already satisfied")
+                    if (stdout.includes('Downloading') || stdout.includes('Installing')) {
+                        await botInstance.sendMessage(ownerId, `⚪ **INSTALL SUCCESS** ⚪\n\n🐍 **Module:** \`${pkgString}\`\n✅ Berhasil dipasang di VPS!\n\n**Log:**\n\`\`\`\n${stdout.substring(0, 300).trim()}...\n\`\`\``, {parse_mode: 'Markdown'});
+                    }
+                } catch (err) {
+                    await botInstance.sendMessage(ownerId, `⚫ **INSTALL FAILED** ⚪\n\n🐍 **Module:** \`${pkgString}\`\n❌ Gagal dipasang!\n\n**Error Log:**\n\`\`\`\n${err.message.substring(0, 300).trim()}\n\`\`\``, {parse_mode: 'Markdown'});
+                }
+            }
+
         } else if (ext === '.go') {
             if (!fs.existsSync(path.join(PLUGINS_DIR, 'go.mod'))) {
-                execSync(`go mod init botplugins`, { cwd: PLUGINS_DIR });
+                await botInstance.sendMessage(ownerId, `⚫ **AUTO-INSTALLER** ⚪\n\n🐹 Menginisialisasi \`go.mod\`...`, {parse_mode: 'Markdown'});
+                await execAsync(`go mod init botplugins`, { cwd: PLUGINS_DIR });
             }
-            execSync(`go mod tidy`, { cwd: PLUGINS_DIR });
+            try {
+                const { stderr } = await execAsync(`go mod tidy`, { cwd: PLUGINS_DIR });
+                if (stderr.includes('downloading')) {
+                    await botInstance.sendMessage(ownerId, `⚪ **INSTALL SUCCESS** ⚪\n\n🐹 **Golang Modules**\n✅ Dependencies berhasil dirapihkan!\n\n**Log:**\n\`\`\`\n${stderr.substring(0, 300).trim()}...\n\`\`\``, {parse_mode: 'Markdown'});
+                }
+            } catch (err) {
+                await botInstance.sendMessage(ownerId, `⚫ **INSTALL FAILED** ⚪\n\n🐹 **Golang Modules**\n❌ Gagal memuat dependencies!\n\n**Log:**\n\`\`\`\n${err.message.substring(0, 300).trim()}\n\`\`\``, {parse_mode: 'Markdown'});
+            }
         }
-    } catch (err) {}
+    } catch (criticalErr) {
+        console.log('\x1b[31m[ AUTO-INSTALL ERROR ]\x1b[0m', criticalErr.message);
+    }
 }
 
 // ==========================================
@@ -122,7 +158,6 @@ bot.on('message', async (msg) => {
     let text = msg.text || msg.caption || '';
     const isOwner = userId === config.ownerId;
 
-    // Log Activity (JuiceSSH JJ Aesthetic)
     console.log(`\x1b[37m[ ${new Date().toLocaleTimeString()} ] \x1b[1m${username.padEnd(12)}\x1b[0m : ${text.substring(0, 30)}`);
 
     const banned = getDB(BANNED_DB);
@@ -145,7 +180,6 @@ bot.on('message', async (msg) => {
         if (command === 'runtime') {
             const ut_bot = getRuntime(process.uptime());
             const ut_sys = getRuntime(os.uptime());
-            // Fake Specs for Runtime Command
             const res = `⚪ **SYSTEM RUNTIME** ⚪\n\n` +
                         `🤖 **Bot Active:** \`${ut_bot}\`\n` +
                         `🖥️ **VPS Uptime:** \`${ut_sys}\`\n` +
@@ -177,12 +211,18 @@ bot.on('message', async (msg) => {
         const pluginPath = path.join(PLUGINS_DIR, `${command}${ext}`);
         if (fs.existsSync(pluginPath)) {
             console.log(`\x1b[32m  └─ EXECUTING:\x1b[0m /${command}${ext}`);
-            installMissingPackages(pluginPath, ext);
+            
+            // JALANKAN AUTO-INSTALLER SEBELUM PLUGIN DIEKSEKUSI
+            await installMissingPackages(pluginPath, ext, bot, config.ownerId);
+
             const cmdToExec = `${runner} "${pluginPath}" "${chatId}" "${userId}" "${q}" "${filePathOnVps}" "${fileType}" "${global.thumb}"`;
 
             exec(cmdToExec, (error, stdout, stderr) => {
                 if (filePathOnVps !== 'none' && fs.existsSync(filePathOnVps)) setTimeout(() => { try{fs.unlinkSync(filePathOnVps)}catch(e){} }, 5000);
-                if (error || stderr) return;
+                if (error || stderr) {
+                    console.log(`\x1b[31m  └─ ERROR:\x1b[0m ${stderr || error.message}`);
+                    return;
+                }
                 const out = stdout.trim();
                 if (!out) return;
 
